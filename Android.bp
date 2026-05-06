@@ -1,0 +1,98 @@
+// Soong wrapper for NanoNNG (the messaging core nanomq is built on).
+// Lives at the root of the GB-AAOS/NanoNNG fork (working branch
+// gbrpi-95d675bc). Static library — only nanomq consumes it.
+//
+// cflags mirror the explicit `Android` branch of nng/CMakeLists.txt at the
+// fork's pristine SHA, plus the Linux-branch macros that apply equally on
+// Android (NNG_HAVE_ABSTRACT_SOCKETS), plus the default ON options from
+// cmake/NNGOptions.cmake. TLS/WSS/QUIC/SQLite intentionally OMITTED so we
+// don't have to wire mbedTLS or msquic.
+
+package {
+    default_applicable_licenses: ["external_nanomq_nng_license"],
+}
+
+license {
+    name: "external_nanomq_nng_license",
+    visibility: [":__subpackages__"],
+    license_kinds: ["SPDX-license-identifier-MIT"],
+    license_text: ["LICENSE.txt"],
+}
+
+cc_library_static {
+    name: "libnng",
+    srcs: [
+        "src/nng.c",
+        "src/nng_legacy.c",
+        "src/core/**/*.c",
+        "src/platform/posix/**/*.c",
+        "src/sp/**/*.c",
+        "src/mqtt/**/*.c",
+        "src/supplemental/**/*.c",
+        "src/compat/**/*.c",
+    ],
+    exclude_srcs: [
+        "src/**/*test*.c",
+        "src/supplemental/tls/**/*.c",
+        "src/supplemental/quic/**/*.c",
+        "src/supplemental/sqlite/**/*.c",
+        "src/supplemental/iceoryx/**/*.c",
+    ],
+    local_include_dirs: [
+        "include",
+        "src",
+    ],
+    cflags: [
+        // Platform — mirrors the `Android` branch of nng/CMakeLists.txt
+        "-DNNG_PLATFORM_POSIX=1",
+        "-DNNG_PLATFORM_LINUX=1",
+        "-DNNG_PLATFORM_ANDROID=1",
+        "-DNNG_USE_EVENTFD=1",
+        "-DNNG_HAVE_ABSTRACT_SOCKETS=1",
+        "-DNNG_PRIVATE=1",
+        "-DNNG_HIDDEN_VISIBILITY=1",
+
+        // Transports (defaults ON in NNGOptions.cmake; TLS/WSS/QUIC variants
+        // are intentionally OMITTED — no TLS engine wired up)
+        "-DNNG_TRANSPORT_INPROC=1",
+        "-DNNG_TRANSPORT_IPC=1",
+        "-DNNG_TRANSPORT_TCP=1",
+        "-DNNG_TRANSPORT_WS=1",
+        "-DNNG_TRANSPORT_FDC=1",
+        "-DNNG_TRANSPORT_MQTT_TCP=1",
+        "-DNNG_TRANSPORT_MQTT_BROKER_TCP=1",
+        "-DNNG_TRANSPORT_MQTT_BROKER_WS=1",
+
+        // Protocols (all default ON)
+        "-DNNG_PROTO_BUS0=1",
+        "-DNNG_PROTO_PAIR0=1",
+        "-DNNG_PROTO_PAIR1=1",
+        "-DNNG_PROTO_PUSH0=1",
+        "-DNNG_PROTO_PULL0=1",
+        "-DNNG_PROTO_PUB0=1",
+        "-DNNG_PROTO_SUB0=1",
+        "-DNNG_PROTO_REQ0=1",
+        "-DNNG_PROTO_REP0=1",
+        "-DNNG_PROTO_RESPONDENT0=1",
+        "-DNNG_PROTO_SURVEYOR0=1",
+        "-DNNG_PROTO_MQTT_CLIENT=1",
+        "-DNNG_PROTO_MQTT_BROKER=1",
+
+        // Supplemental
+        "-DNNG_ENABLE_HTTP=1",
+        "-DNNG_SUPP_HTTP=1",
+        "-DNNG_SUPP_WEBSOCKET=1",
+        "-DNNG_SUPP_BASE64=1",
+        "-DNNG_SUPP_SHA1=1",
+        "-DNNG_ENABLE_IPV6=1",
+        "-DNNG_ENABLE_STATS=1",
+        "-DNNG_ENABLE_COMPAT=1",
+
+        "-Wno-unused-parameter",
+        "-Wno-sign-compare",
+        "-Wno-missing-field-initializers",
+        "-Wno-pointer-arith",
+    ],
+    c_std: "gnu99",
+    shared_libs: ["liblog"],
+}
