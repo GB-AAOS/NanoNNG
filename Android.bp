@@ -106,6 +106,12 @@ cc_library_static {
         "-DNNG_ENABLE_STATS=1",
         "-DNNG_ENABLE_COMPAT=1",
 
+        // MUST match the corresponding -D flags in external/nanomq/Android.bp:
+        // both toggle conditional fields inside `struct conf` (conf.h:625),
+        // so any drift makes nanomq and libnng disagree on field offsets.
+        "-DENABLE_LOG=1",
+        "-DACL_SUPP=1",
+
         "-Wno-unused-parameter",
         "-Wno-sign-compare",
         "-Wno-missing-field-initializers",
