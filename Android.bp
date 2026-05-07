@@ -21,6 +21,7 @@ license {
 
 cc_library_static {
     name: "libnng",
+    vendor_available: true,
     srcs: [
         "src/nng.c",
         "src/nng_legacy.c",
@@ -33,15 +34,32 @@ cc_library_static {
     ],
     exclude_srcs: [
         "src/**/*test*.c",
-        "src/supplemental/tls/**/*.c",
         "src/supplemental/quic/**/*.c",
         "src/supplemental/sqlite/**/*.c",
         "src/supplemental/iceoryx/**/*.c",
+        // SCRAM auth depends on OpenSSL EVP — not wired
+        "src/supplemental/scram/**/*.c",
+        // TLS: keep tls_common.c (compiles to stubs when NNG_SUPP_TLS is
+        // undefined); drop the engine backends (mbedtls/openssl/wolfssl)
+        "src/supplemental/tls/mbedtls/**/*.c",
+        "src/supplemental/tls/openssl/**/*.c",
+        "src/supplemental/tls/wolfssl/**/*.c",
+        // sp transports we don't enable (TLS / MQTT-TLS / ZeroTier)
+        "src/sp/transport/tls/**/*.c",
+        "src/sp/transport/mqtts/**/*.c",
+        "src/sp/transport/zerotier/**/*.c",
+        // mqtt transports / protocols we don't enable (QUIC, TLS, iceoryx)
+        "src/mqtt/transport/quic/**/*.c",
+        "src/mqtt/transport/tls/**/*.c",
+        "src/mqtt/protocol/iceoryx_shm/**/*.c",
+        // Catch QUIC-named files mixed into other dirs
+        "src/**/*quic*.c",
     ],
     local_include_dirs: [
         "include",
         "src",
     ],
+    export_include_dirs: ["include"],
     cflags: [
         // Platform — mirrors the `Android` branch of nng/CMakeLists.txt
         "-DNNG_PLATFORM_POSIX=1",
